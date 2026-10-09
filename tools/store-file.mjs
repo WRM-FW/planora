@@ -72,3 +72,51 @@ export function createFileStore(options) {
 
   return { dir: dir, file: full, read: read, write: write, exists: function () { return existsSync(full); } };
 }
+
+/**
+ * 命名单元文档存储：便利贴（StickyNote.json）、废纸篓（Wastebasket.json）这类
+ * 「整份 JSON 文档」用的通用存储，和主数据一样走「临时文件 → 原子改名 → .bak」。
+ * 文档内容原样存取（结构由各功能自己解释），坏档同样隔离成 .corrupt-<时间戳>。
+ */
+export function createDocStore(options) {
+  const opts = options || {};
+  const dir = opts.dir;
+  const full = join(dir, opts.file);
+
+  function ensureDir() {
+    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  }
+
+  /** 读出文档；不存在返回 null。解析失败隔离坏档后也返回 null。 */
+  function read() {
+    if (!existsSync(full)) return null;
+    let raw;
+    try {
+      raw = readFileSync(full, "utf8");
+    } catch (err) {
+      return null;
+    }
+    if (raw.trim() === "") return null;
+    try {
+      return JSON.parse(raw);
+    } catch (err) {
+      try { renameSync(full, full + ".corrupt-" + Date.now()); } catch (e) { /* 挪不动就算了 */ }
+      return null;
+    }
+  }
+
+  function write(doc) {
+    const json = JSON.stringify(doc, null, 2);
+    if (Buffer.byteLength(json) > MAX_BYTES) throw new Error("文档超过 " + MAX_BYTES + " 字节");
+    ensureDir();
+    const tmp = full + ".tmp";
+    writeFileSync(tmp, json, "utf8");
+    if (existsSync(full)) {
+      try { copyFileSync(full, full + ".bak"); } catch (e) { /* 备份失败不影响主流程 */ }
+    }
+    renameSync(tmp, full);
+    return { path: full, bytes: Buffer.byteLength(json) };
+  }
+
+  return { file: full, read: read, write: write };
+}

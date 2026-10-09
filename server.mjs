@@ -12,10 +12,16 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { APP_VERSION } from './src/config.js';
-import { createFileStore } from './tools/store-file.mjs';
+import { createFileStore, createDocStore } from './tools/store-file.mjs';
 
 export const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)));
 export const DEFAULT_PORT = 5173;
+
+/** 文档接口白名单：URL 里的名字 → 程序目录 data\ 下的文件名。只认这两个。 */
+export const DOC_FILES = {
+  sticky: 'StickyNote.json',
+  waste: 'Wastebasket.json'
+};
 
 export const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -118,13 +124,50 @@ async function handleApi(req, res, pathname, store, port) {
   return sendJson(res, 405, { ok: false, error: '不支持的方法 ' + req.method });
 }
 
+/** 文档接口：/api/doc/<name>，整份 JSON 原样读写（便利贴 / 废纸篓）。 */
+async function handleDoc(req, res, name, docStore) {
+  const store = docStore(name);
+  if (req.method === 'GET') {
+    const doc = store.read();
+    return sendJson(res, 200, { ok: true, path: store.file, doc: doc });
+  }
+  if (req.method === 'PUT' || req.method === 'POST') {
+    let body;
+    try {
+      body = await readBody(req, 4 * 1024 * 1024);
+    } catch (err) {
+      return sendJson(res, 413, { ok: false, error: (err && err.message) || '读取失败' });
+    }
+    let doc;
+    try {
+      doc = JSON.parse(body || 'null');
+    } catch (err) {
+      return sendJson(res, 400, { ok: false, error: '请求体不是合法 JSON' });
+    }
+    if (doc === null || typeof doc !== 'object' || Array.isArray(doc)) {
+      return sendJson(res, 400, { ok: false, error: '文档必须是一个 JSON 对象' });
+    }
+    try {
+      const saved = store.write(doc);
+      return sendJson(res, 200, { ok: true, path: saved.path, bytes: saved.bytes });
+    } catch (err) {
+      return sendJson(res, 500, { ok: false, error: (err && err.message) || '写入失败' });
+    }
+  }
+  return sendJson(res, 405, { ok: false, error: '不支持的方法 ' + req.method });
+}
+
 /** 建一个还没 listen 的静态服务器；root 之外的文件一律 403。 */
 export function createStaticServer(options) {
   const opts = options || {};
   const root = opts.root ? resolve(opts.root) : ROOT;
-  const store = opts.store || createFileStore({
-    dir: process.env.PLANORA_DATA_DIR || join(root, 'data')
-  });
+  const dataDir = process.env.PLANORA_DATA_DIR || join(root, 'data');
+  const store = opts.store || createFileStore({ dir: dataDir });
+  const docStores = Object.create(null);
+  function docStore(name) {
+    if (!docStores[name]) docStores[name] = createDocStore({ dir: dataDir, file: DOC_FILES[name] });
+    return docStores[name];
+  }
 
   return createServer(async (req, res) => {
     try {
@@ -134,6 +177,10 @@ export function createStaticServer(options) {
       if (pathname === '/api/ping' || pathname === '/api/store') {
         const handled = await handleApi(req, res, pathname, store, opts.port);
         if (handled !== false) return;
+      }
+      const docMatch = pathname.match(/^\/api\/doc\/([A-Za-z0-9_-]+)$/);
+      if (docMatch && DOC_FILES[docMatch[1]]) {
+        return await handleDoc(req, res, docMatch[1], docStore);
       }
       if (pathname.startsWith('/api/')) return sendJson(res, 404, { ok: false, error: '没有这个接口' });
       // 数据文件不走静态通道，避免被页面或别的程序当普通文件抓走

@@ -59,8 +59,18 @@
   border-top: var(--line) solid var(--band-edge);
 }
 
-/* 统计条 */
-.summary { margin-top: 20px; }
+/* 顶部三模块：左列（日期带①+统计②）在上，便利贴③在右并跨两模块的高度 */
+.top-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 22px;
+  align-items: stretch;
+  margin-top: 20px;
+}
+.top-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.top-col .band { margin-top: 0; }
+.summary { min-width: 0; }
+.sticky { min-width: 0; }
 .summary__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(120px, 150px)) minmax(0, 1fr);
@@ -111,6 +121,12 @@
   .workspace { grid-template-columns: minmax(0, 1fr); }
   .panel--rail { position: static; }
   .tl__scroll { max-height: none; }
+}
+
+@media (max-width: 900px) {
+  /* 窄屏：便利贴从右列落到左列下方，独占一行 */
+  .top-grid { grid-template-columns: minmax(0, 1fr); }
+  .sticky { max-width: 460px; }
 }
 
 @media (max-width: 720px) {

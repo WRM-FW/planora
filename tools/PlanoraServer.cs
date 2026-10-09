@@ -36,22 +36,29 @@ using Microsoft.Win32;
 [assembly: AssemblyProduct("Planora")]
 [assembly: AssemblyDescription("Planora 独立桌面版：自带窗口 + 内置本地数据服务（无控制台、不依赖浏览器）")]
 [assembly: AssemblyCompany("Planora")]
-[assembly: AssemblyVersion("1.1.2.0")]
-[assembly: AssemblyFileVersion("1.1.2.0")]
+[assembly: AssemblyVersion("1.1.3.0")]
+[assembly: AssemblyFileVersion("1.1.3.0")]
 
 internal static class PlanoraServer
 {
     private const string AppId = "planora";
     private const string DisplayName = "Planora";
-    private const string Version = "1.1.2";
+    private const string Version = "1.1.3";
     private const string StoreFormat = "planora-store/v1";
     private const string StoreFileName = "planora.json";
     private const string LogFileName = "planora.log";
     private const string ViewKey = "planora/view/v1";
-    private const string SingleInstanceMutex = "Local\\Planora_SingleInstance_1_1_2";
+    private const string SingleInstanceMutex = "Local\\Planora_SingleInstance_1_1_3";
     private const int MaxBodyBytes = 4 * 1024 * 1024;
     private const int MaxHeaderBytes = 16384;
     private static readonly int[] Ports = new int[] { 5173, 5180, 5181, 5182, 5183, 5184, 5185, 5186, 5187, 5188, 5189 };
+
+    // 文档接口白名单：URL 里的名字 → data\ 下的文件名。只认这两个。
+    private static readonly Dictionary<string, string> DocFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+    {
+        { "sticky", "StickyNote.json" },
+        { "waste", "Wastebasket.json" }
+    };
 
     private static readonly object DataGate = new object();
     private static readonly JavaScriptSerializer Json = new JavaScriptSerializer();
@@ -288,6 +295,68 @@ internal static class PlanoraServer
         return File.ReadAllText(path, new UTF8Encoding(false));
     }
 
+    /** 文档接口：整份 JSON 原样读写（便利贴 / 废纸篓），沿用原子替换 + .bak。 */
+    private static string DocJson(string name)
+    {
+        string file = Path.Combine(dataDir, DocFiles[name]);
+        object doc = null;
+        lock (DataGate)
+        {
+            if (File.Exists(file))
+            {
+                try { doc = Json.DeserializeObject(ReadAllText(file)); }
+                catch (Exception) { doc = null; }
+            }
+        }
+        Dictionary<string, object> payload = new Dictionary<string, object>();
+        payload["ok"] = true;
+        payload["path"] = file;
+        payload["doc"] = doc;
+        return Json.Serialize(payload);
+    }
+
+    private static string SaveDocJson(string name, byte[] body, out int status)
+    {
+        status = 400;
+        string text = Encoding.UTF8.GetString(body);
+        object doc;
+        try { doc = Json.DeserializeObject(text); }
+        catch (Exception ex) { return ErrorJson("请求体不是合法 JSON：" + ex.Message); }
+        if (doc == null || !(doc is Dictionary<string, object>)) return ErrorJson("文档必须是一个 JSON 对象");
+
+        string file = Path.Combine(dataDir, DocFiles[name]);
+        try
+        {
+            string pretty = Json.Serialize(doc);
+            byte[] data = Encoding.UTF8.GetBytes(pretty);
+            if (data.Length > MaxBodyBytes) return ErrorJson("文档超过 " + MaxBodyBytes + " 字节");
+            lock (DataGate)
+            {
+                Directory.CreateDirectory(dataDir);
+                string tmp = file + ".tmp";
+                File.WriteAllBytes(tmp, data);
+                if (File.Exists(file))
+                {
+                    try { File.Replace(tmp, file, file + ".bak", true); }
+                    catch (Exception) { File.Delete(file); File.Move(tmp, file); }
+                }
+                else File.Move(tmp, file);
+            }
+            status = 200;
+            Dictionary<string, object> payload = new Dictionary<string, object>();
+            payload["ok"] = true;
+            payload["path"] = file;
+            payload["bytes"] = data.Length;
+            return Json.Serialize(payload);
+        }
+        catch (Exception ex)
+        {
+            Log("文档写入失败：" + ex.Message);
+            status = 500;
+            return ErrorJson("写入失败：" + ex.Message);
+        }
+    }
+
     /** 读出全部键值；文件不存在就是空档。损坏时隔离备份，绝不让坏文件把程序卡死。 */
     private static Dictionary<string, string> ReadKeys(out string warning, bool quarantine)
     {
@@ -482,6 +551,21 @@ internal static class PlanoraServer
     {
         if (path == "/api/ping") { WriteJson(stream, 200, PingJson()); return; }
         if (path == "/api/bye") { WriteJson(stream, 200, "{\"ok\":true}"); return; }
+        if (path.StartsWith("/api/doc/", StringComparison.Ordinal))
+        {
+            string name = path.Substring("/api/doc/".Length);
+            if (!DocFiles.ContainsKey(name)) { WriteJson(stream, 404, "{\"ok\":false,\"error\":\"没有这个文档\"}"); return; }
+            if (method == "GET") { WriteJson(stream, 200, DocJson(name)); return; }
+            if (method == "PUT" || method == "POST")
+            {
+                int dstatus;
+                string djson = SaveDocJson(name, body, out dstatus);
+                WriteJson(stream, dstatus, djson);
+                return;
+            }
+            WriteJson(stream, 405, "{\"ok\":false,\"error\":\"不支持的方法\"}");
+            return;
+        }
         if (path == "/api/store")
         {
             if (method == "GET")

@@ -6,6 +6,7 @@
  * 拿不到才退回浏览器 localStorage —— 单文件版本依然能直接双击打开。
  */
 import { openBackend, attachUnload } from "./data/backend.js";
+import { createNoteStore } from "./data/noteStore.js";
 import { createApp } from "./ui/App.js";
 
 function fatal(err) {
@@ -17,14 +18,28 @@ function fatal(err) {
 }
 
 openBackend({ window: window, document: document }).then(function (backend) {
-  const app = createApp({
-    document: document,
-    window: window,
+  const noteStore = createNoteStore({
+    request: backend.request,
     storage: backend.storage,
-    status: backend.status
+    window: window
   });
-  app.start();
-  attachUnload(window, backend.storage);
-  // 方便在控制台里查看/调试本地数据
-  window.planora = app;
+  // 先拉取便利贴 / 废纸篓文档，再启动 UI —— 保证首帧就有内容，不闪空白贴。
+  return noteStore.load().then(function () {
+    const app = createApp({
+      document: document,
+      window: window,
+      storage: backend.storage,
+      status: backend.status,
+      noteStore: noteStore
+    });
+    app.start();
+    attachUnload(window, backend.storage);
+    // 便利贴也挂到「离开前保存」上，关窗前把没落盘的改动送出去。
+    if (window && typeof window.addEventListener === "function") {
+      window.addEventListener("pagehide", function () { noteStore.flush(); });
+    }
+    // 方便在控制台里查看/调试本地数据
+    window.planora = app;
+    return app;
+  });
 }, fatal);

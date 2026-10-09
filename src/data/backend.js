@@ -90,7 +90,8 @@ export async function openBackend(options) {
 
   function browserMode(note) {
     status.emit({ mode: "browser", note: note || null, save: SAVE_STATE.IDLE, path: null });
-    return { storage: browserStorage, status: status, mode: "browser", path: null, source: "browser" };
+    // 没有本机服务：便利贴会退回 localStorage 兜底，所以这里不带 request。
+    return { storage: browserStorage, status: status, mode: "browser", path: null, source: "browser", request: null };
   }
 
   let fetchImpl = opts.fetch || null;
@@ -151,5 +152,5 @@ export async function openBackend(options) {
     win.setInterval(function () { request("GET", PING_API, null); }, 20000);
   }
 
-  return { storage: storage, status: status, mode: "file", path: loaded.path, source: decision.source };
+  return { storage: storage, status: status, mode: "file", path: loaded.path, source: decision.source, request: request };
 }

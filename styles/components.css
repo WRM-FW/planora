@@ -387,3 +387,127 @@
   .plan { grid-template-columns: auto minmax(0, 1fr); }
   .plan__actions { grid-column: 2; justify-content: flex-start; }
 }
+
+/* ---------- 便利贴 ---------- */
+.sticky-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 10px;
+  border: var(--line) solid var(--ink-text);
+  background: var(--sheet-hi);
+  box-shadow: var(--reg) var(--reg) 0 var(--ink-rule);
+}
+.sticky-panel__head { display: flex; align-items: center; justify-content: space-between; }
+.sticky-panel__title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-text);
+}
+.sticky-panel__basket {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 8px;
+  border: var(--line) solid var(--ink-rule);
+  background: transparent; color: var(--ink-dim); cursor: pointer;
+}
+.sticky-panel__basket:hover { color: var(--ink-text); border-color: var(--ink-text); }
+.sticky-panel__badge {
+  min-width: 16px; height: 16px; padding: 0 4px;
+  display: inline-grid; place-items: center;
+  font-family: var(--font-display); font-size: 11px; font-weight: 700;
+  background: var(--ink-accent); color: var(--pr-high-on);
+}
+.sticky-panel__hint { font-size: 11px; line-height: 1.5; color: var(--ink-dim); }
+.sticky-panel.is-empty { min-height: 120px; align-items: center; justify-content: center; }
+
+/* 多张便利贴的切换标签 */
+.note-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.note-tab {
+  max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 3px 8px; font-size: 11px;
+  border: var(--line) solid var(--ink-rule); cursor: pointer; opacity: 0.7;
+}
+.note-tab.is-active { opacity: 1; border-color: var(--ink-text); box-shadow: 2px 2px 0 var(--ink-rule); }
+
+/* 便签本体：微微旋转 + 硬阴影 + 顶部胶带，拟物成"贴在板上的一张纸"；高度撑满便利贴列 */
+.note {
+  position: relative;
+  display: flex; flex: 1 1 auto; flex-direction: column; gap: 8px;
+  min-height: 0;
+  padding: 16px 12px 10px;
+  border: var(--line) solid rgba(0, 0, 0, 0.28);
+  box-shadow: 5px 6px 0 rgba(0, 0, 0, 0.18);
+  transform: rotate(-1.4deg);
+  transition: transform 0.12s ease;
+}
+.note:hover { transform: rotate(-0.4deg); }
+.note__tape {
+  position: absolute; top: -9px; left: 50%; transform: translateX(-50%) rotate(-2deg);
+  width: 78px; height: 18px;
+  background: rgba(244, 235, 214, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+.note__area {
+  /* 撑满便签剩余高度；内容超出时自身滚动 */
+  flex: 1 1 auto; min-height: 66px;
+  border: 0; background: transparent; resize: none; overflow-y: auto;
+  font-family: var(--font-sans); font-size: 14px; line-height: 1.6;
+  color: inherit; outline: none;
+}
+.note__area::placeholder { color: inherit; opacity: 0.5; }
+
+/* 颜色选择：一排油墨圆片 + 一个自定义取色器 */
+.note__colors { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.note__swatch {
+  width: 20px; height: 20px; padding: 0; cursor: pointer;
+  border: var(--line) solid rgba(0, 0, 0, 0.35);
+}
+.note__swatch.is-active { outline: 2px solid var(--ink-text); outline-offset: 1px; }
+.note__custom {
+  position: relative; display: inline-grid; place-items: center;
+  width: 22px; height: 22px; cursor: pointer;
+  border: var(--line) dashed rgba(0, 0, 0, 0.4);
+  background:
+    conic-gradient(from 0deg, #E8553D, #F2B134, #A8C6A1, #7FB3C8, #C7B8E0, #E8553D);
+}
+.note__custom .icon { color: var(--ink-text); mix-blend-mode: luminosity; }
+.note__picker { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+
+/* 撕下按钮：上方一道虚线"撕裂线" */
+.note__tear {
+  position: relative; margin-top: 2px; padding: 7px 0 2px;
+  border: 0; background: transparent; cursor: pointer;
+  font-family: var(--font-display); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.3em; color: inherit; opacity: 0.72;
+}
+.note__tear:hover { opacity: 1; }
+.note__tear-perf {
+  position: absolute; top: 0; left: 2px; right: 2px; height: 0;
+  border-top: 2px dashed rgba(0, 0, 0, 0.4);
+}
+.note__tear:active .note__tear-label { transform: translateY(1px); }
+
+/* 撕下动画的幽灵便签 */
+.note--ghost {
+  transition: transform 0.5s cubic-bezier(0.4, 0.1, 0.6, 1), opacity 0.5s ease;
+  transform-origin: center;
+}
+
+/* 废纸篓弹窗列表 */
+.waste__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; max-height: 52vh; overflow-y: auto; }
+.waste__item {
+  display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  padding: 8px 10px; border: var(--line) solid var(--ink-rule); background: var(--sheet-hi);
+}
+.waste__chip { width: 26px; height: 26px; border: var(--line) solid var(--ink-text); }
+.waste__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.waste__text { font-size: 13px; white-space: pre-wrap; word-break: break-word; max-height: 3.2em; overflow: hidden; }
+.waste__time { font-size: 11px; color: var(--ink-dim); }
+.waste__ops { display: flex; gap: 6px; }
+.waste__empty { margin: 0; font-size: 13px; color: var(--ink-dim); }

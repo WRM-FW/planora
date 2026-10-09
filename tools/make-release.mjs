@@ -108,7 +108,7 @@ const items = [
   [join(project, "使用说明.txt"), "使用说明.txt"],
   [join(project, "README.md"), "README.md"],
   // 分发包里必须带上许可：WebView2 SDK 那份许可要求再分发时保留版权声明与免责声明，
-  // 字体是 OFL（同样要随包带授权文本）；docs/ 是 使用说明.txt 第八节点开的批量导入规则。
+  // 字体是 OFL（同样要随包带授权文本）；docs/ 是 使用说明.txt「日程很多时」那节点开的批量导入规则。
   [join(project, "LICENSE"), "LICENSE"],
   [join(project, "NOTICE.md"), "NOTICE.md"],
   [join(project, "THIRD_PARTY_LICENSES"), "THIRD_PARTY_LICENSES"],

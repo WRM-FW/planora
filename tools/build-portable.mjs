@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, "..");
 const ENTRY = "src/main.js";
-const VERSION = "1.1.2";
+const VERSION = "1.1.3";
 
 const MIME = {
   ".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf",

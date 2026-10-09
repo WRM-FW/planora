@@ -41,7 +41,7 @@
 {
   "format": "planora-store/v1",
   "app": "planora",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "savedAt": "2026-10-09T08:00:00.000Z",
   "keys": {
     "planora/plans/v1": "{\"version\":1,\"plans\":[ … ]}",
@@ -69,7 +69,7 @@ if (existsSync(FILE)) copyFileSync(FILE, FILE + ".backup");   // 先留一份
 
 const doc = existsSync(FILE)
   ? JSON.parse(readFileSync(FILE, "utf8"))
-  : { format: "planora-store/v1", app: "planora", version: "1.1.2", keys: {} };
+  : { format: "planora-store/v1", app: "planora", version: "1.1.3", keys: {} };
 if (!doc.keys || typeof doc.keys !== "object") throw new Error("存档没有 keys 对象，先别写");
 
 const payload = JSON.parse(readFileSync(IN, "utf8"));
@@ -256,8 +256,38 @@ node check-plans.mjs
 
 ---
 
-## 顺带一提
+## 便利贴和废纸篓不在这套规则里
 
-`data\planora.json` 在仓库里是一份**示例存档**（14 条虚构计划，含两条 `daily` 系列和一处时间相接的重叠），格式跟你自己的完全一致 —— 想直接拿它当模板改也行。你自己的数据文件不要提交到公开仓库：把 `.gitignore` 里 `data/planora.json` 那行取消注释即可。
+1.1.3 起 `data\` 下还多了两个文件，它们**不在这套批量规则里** —— 是普通 JSON，没有外层信封，也就没有那层转义字符串的坑：
 
-格式规范的另一份出处是 README 的「数据模型」一节；两边描述的是同一个东西，哪边改了都要同步另一边的表格。
+```json
+{ "format": "planora-notes/v1", "current": "note-mw1sample-1",
+  "notes": [ { "id": "note-mw1sample-1", "text": "随手记\n支持换行", "color": "#f2b134",
+               "updatedAt": "2026-10-09T08:00:00.000Z" } ] }
+
+{ "format": "planora-waste/v1",
+  "items": [ { "id": "note-mw1sample-2", "text": "撕下的那张", "color": "#7fb3c8",
+               "updatedAt": "2026-10-09T08:05:00.000Z", "tornAt": "2026-10-09T09:00:00.000Z" } ] }
+```
+
+要改的话，规矩和主数据一样：**先退出程序**（便签同样是内存里一份 + 整份 PUT 到 `/api/doc/sticky`），改完再打开。几条字段性质：
+
+- `text` 可以带换行，超过 2000 字的部分在归一化时被截掉。
+- `color` 只认 `#rgb` / `#rrggbb`（大小写都行），其它值一律回落默认琥珀色 —— 不会像计划那样把整条丢掉的，但颜色会变。
+- **缺 `id` 的条目会被直接丢弃**（和计划不同：计划缺 id 会自动补一个）。
+- `current` 指向正在写的那张贴，指不到就用 `notes[0]`；`notes` 为空时程序自动补一张空白贴。
+- 废纸篓新条目插在头部，最多留 200 张。
+
+文件写坏了不会崩，但两边的处理不一样：绿色版（`Planora.exe`）读不出这份文档时直接当没有便签处理，**坏文件留在原地不动**（手工改回来还能救）；`node server.mjs` 的开发环境会把它改名成 `StickyNote.json.corrupt-<时间戳>` 再当空档。两种情况下页面上都不会报错，所以改之前一样要先备份。
+
+还有一点：页脚的「导出备份 / 导入备份」**只含计划，不含便签**。搬机器时直接拷 `data\` 整个文件夹最省事。
+
+---
+
+## 仓库里的示例存档
+
+`data\planora.json` 和 `data\StickyNote.json` 在仓库里是两份**示例存档**（14 条虚构计划，含两条 `daily` 系列和一处时间相接的重叠；两张示例便利贴演示换行、颜色和 `current` 指向），格式跟你自己的完全一致 —— 想直接拿它们当模板改也行。你自己的日程和便签不要提交到公开仓库：把 `.gitignore` 末尾那两行注释取消即可。
+
+废纸篓 `Wastebasket.json` 仓库里不带样本 —— 它是你第一次撕下便签时才由程序创建的。
+
+字段与格式的另一份出处是 README 的「数据模型」（计划）和「便利贴（1.1.3）」（便签）两节；三处描述的是同一批东西，哪边改了都要同步另外两边。

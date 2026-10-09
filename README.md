@@ -2,11 +2,11 @@
 
 一个给自己每天用的轻量级计划表：把一天的学习、工作、生活排进时间轴，随时看到**现在该做什么**、**今天做完了多少**。
 
-当前版本 **1.1.2**。发布形态是 **绿色免安装版**：解压后双击 `Planora.exe` 就能用 —— 不装任何东西、**不出现任何命令行黑窗**、**不再借浏览器**：Planora 打开**自己的独立窗口**（内嵌 WebView2 渲染），计划存在**程序目录里的 JSON 文件**（`data\planora.json`）里，换电脑、清浏览器数据都不会丢。
+当前版本 **1.1.3**。发布形态是 **绿色免安装版**：解压后双击 `Planora.exe` 就能用 —— 不装任何东西、**不出现任何命令行黑窗**、**不再借浏览器**：Planora 打开**自己的独立窗口**（内嵌 WebView2 渲染），计划存在**程序目录里的 JSON 文件**（`data\planora.json`）里，换电脑、清浏览器数据都不会丢。1.1.3 在统计区右侧加了一张**便利贴**（多行随手记 + 自定义颜色 + 撕下进废纸篓），内容存 `data\StickyNote.json`、废纸篓存 `data\Wastebasket.json`。
 
 源码同样是零依赖、零构建：`node server.mjs` 就能跑，也可以用 `tools/build-portable.mjs` 打出上面那个单文件绿色版。
 
-已经打包好的绿色版在仓库的 **Releases** 里（`planora_<版本>.zip`，解压即用）；源码仓库带一份 `data/planora.json` 示例存档，格式和你真实的数据文件完全一样。
+已经打包好的绿色版在仓库的 **Releases** 里（`planora_<版本>.zip`，解压即用）；源码仓库带两份示例存档（`data/planora.json` 的计划、`data/StickyNote.json` 的便利贴），格式和你真实的数据文件完全一样。
 
 ---
 
@@ -14,10 +14,10 @@
 
 ### 绿色版：解压就能用
 
-发布包解压后是一个 `planora_1.1.2` 文件夹（`make-release.mjs` 的命名规则是 `planora_<版本>`；文件夹叫什么无所谓，程序只认自己所在的目录）：
+发布包解压后是一个 `planora_<版本>` 文件夹（`make-release.mjs` 的命名规则；文件夹叫什么无所谓，程序只认自己所在的目录），1.1.3 是这样：
 
 ```
-planora_1.1.2/
+planora_1.1.3/
 ├── Planora.exe                          启动入口（双击它）：自带窗口 + 本机数据服务
 ├── Planora.html                         应用本体：单文件，样式 / 字体 / 脚本全部内联
 ├── icon.ico                             程序图标（已内嵌进 exe）
@@ -30,16 +30,20 @@ planora_1.1.2/
 ├── NOTICE.md                            第三方组件与许可
 ├── THIRD_PARTY_LICENSES/                WebView2 SDK 与字体的许可原文
 ├── docs/                                给 Agent 看的：批量添加日程的规则 + 提示词模板
-└── data/                第一次改动后自动出现，计划就存在这里
+└── data/                运行后出现，数据就存在这里
     ├── planora.json     ← 你的全部计划（纯文本，能直接打开看、直接拷走）
+    ├── StickyNote.json  ← 便利贴内容
+    ├── Wastebasket.json ← 废纸篓（第一次撕下便签时才出现）
     └── planora.log      运行日志，出问题时的排查线索
 ```
 
-双击 **Planora.exe** → Planora 打开**自己的窗口**（标题栏「Planora · 每日计划」），完事。第一次启动会建好 `data\` 目录和运行日志 `planora.log`，`planora.json` 则在你第一次改动（加一条计划、改个状态、甚至切一下主题）时写出来 —— 之后**任何改动都会立刻写回这个文件**，关掉再打开还是最新的数据。再双击一次不会开第二个窗口，只会把已有窗口叫到前台。
+双击 **Planora.exe** → Planora 打开**自己的窗口**（标题栏「Planora · 每日计划」），完事。第一次启动会建好 `data\` 目录和运行日志 `planora.log`；便利贴一打开就会写出 `StickyNote.json`，`planora.json` 则在第一次有改动（加计划、改状态、切主题）时写出来 —— 之后**任何改动都会立刻写回文件**，关掉再打开还是最新的数据。再双击一次不会开第二个窗口，只会把已有窗口叫到前台。
 
 **为什么没有黑窗、也不借浏览器**：`Planora.exe` 编译成 `winexe` 子系统（`/target:winexe`），Windows **根本不会给它分配控制台**，所以从启动到退出全程没有 CMD / PowerShell 窗口。它自己就是一个极小的本机 HTTP 服务：只监听 `127.0.0.1`（不对外、不联网、不装服务、不写注册表），并通过 `/api/store` 读写 `data\planora.json`；界面不再交给系统浏览器，而是由进程内一个 WinForms 窗口里的 **WebView2** 控件加载这个本机服务来渲染 —— 所以 Planora 有属于自己的窗口、自己的图标和任务栏按钮。**关掉这个窗口，服务和窗口引擎的子进程一起退出，不留常驻后台进程。**
 
 **数据在哪儿**：优先存在**程序目录**的 `data\planora.json`（一个与浏览器无关的物理文件）。程序目录写不了时（比如放在只读盘或 `Program Files` 下）自动改存 `%LOCALAPPDATA%\Planora\data\`，页脚会写明当前实际用的路径；也可以用环境变量 `PLANORA_DATA_DIR` 自己指定。写入顺序是「先写临时文件 → 原子替换 → 上一份留成 `.bak`」，所以中途断电、强杀进程都不会把存档写坏。窗口引擎的缓存放在程序目录的 `.webview2\`（只是浏览器内核 profile，不是计划数据）。
+
+便利贴和废纸篓是同一目录下的两个独立文件（`StickyNote.json`、`Wastebasket.json`），走的是另一套「整份文档」读写（`/api/doc/<name>`），落盘策略与主数据一样是临时文件 + 原子替换 + `.bak`；它们的结构与 `planora.json` 互不影响，删掉这两个文件只清掉便签，不动计划。
 
 **直接双击 `Planora.html` 也能用**（不经过 exe）：这时没有本机服务，数据退回浏览器 localStorage，页脚会说明这一点，留底请用「导出备份」。
 
@@ -52,20 +56,20 @@ node server.mjs          # 默认 http://localhost:5173
 
 打开 http://localhost:5173 即可。**不需要 `npm install`**，因为没有任何依赖（连打包器都没有）。换端口：`node server.mjs 8080`，或设环境变量 `PORT=8080`。
 
-第一次跑会直接读到仓库里那份 `data/planora.json`（14 条虚构计划，含两条每天重复的系列和一处时间相接的重叠），所以页面上立刻有东西可看；它也是「数据文件长什么样」的现成样本。想从空档开始就把这个文件删掉，程序会自己重建。你自己的日程别提交上来：`.gitignore` 里 `data/planora.json` 那行取消注释即可。
+`node server.mjs` 也实现了和 exe 一样的 `/api/store` 与 `/api/doc/<name>`（数据写到项目里的 `data/planora.json`、`data/StickyNote.json`），所以**开发环境和绿色版行为完全一致**，不会出现「开发时好好的、打包后又不一样」。
 
-`node server.mjs` 也实现了和 exe 一样的 `/api/store`（数据写到项目里的 `data/planora.json`），所以**开发环境和绿色版行为完全一致**，不会出现「开发时好好的、打包后又不一样」。
+第一次跑会直接读到仓库里那两份示例存档（14 条虚构计划 + 两张示例便利贴），页面上立刻有东西可看；它们同时也是「数据文件长什么样」的现成样本。想从空档开始就把 `data/` 下的文件删掉，程序会自己重建。你自己的日程和便签别提交到公开仓库：`.gitignore` 末尾两行取消注释即可。
 
 开发时也可以双击 `Planora-dev.cmd`（拉起本地服务 + 开浏览器 + 探测已有实例 + 端口自动递增）。这是**开发方式**，会出现一个控制台窗口用来关服务、看日志；绿色版不走这条路。
 
 跑测试与打包：
 
 ```bash
-node --test                                               # 87 个用例，秒级跑完
+node --test                                               # 104 个用例，秒级跑完
 node tools/build-portable.mjs <输出路径>                   # 打单文件 Planora.html
 node tools/verify-portable.mjs <Planora.html>             # 真实浏览器自检单文件版（18 项，file:// 兜底路径）
 node tools/verify-file-store.mjs http://localhost:5173/   # 真实浏览器自检文件存储（22 项，需先启动 exe）
-node tools/make-release.mjs                               # 单文件 HTML + csc 编译 exe + 组装 <输出根>/planora_<版本> 与 zip（默认根目录是工程旁的 releases/）
+node tools/make-release.mjs                               # 单文件 HTML + csc 编译 exe + 组装 <输出根>/planora_<版本> 与 zip（默认根目录是工程旁的 releases/；许可与 docs/ 一并入包）
 ```
 
 编译 `Planora.exe` 只需要 .NET Framework 4.x 自带的 `csc`（Windows 自带，无需安装任何 SDK）。1.1.2 起界面由 WebView2 承载，所以还要引用随带的 WebView2 运行库（`tools/webview2/`，发布时一并拷贝到 exe 同目录）：
@@ -104,7 +108,7 @@ csc /nologo /target:winexe /optimize+ /platform:anycpu ^
 
 ```
 planora/
-├── index.html                 应用外壳：区域容器 + 预绘制主题脚本 + 内联 SVG favicon
+├── index.html                 应用外壳：区域容器 + 便利贴栏 + 预绘制主题脚本 + 内联 SVG favicon
 ├── server.mjs                 零依赖静态服务器（导出工厂 + 可直接运行）
 ├── launch.mjs                 开发用引导：起服务、探测已有实例、开浏览器
 ├── Planora-dev.cmd            开发用双击入口（检查 Node → 跑 launch.mjs）
@@ -119,7 +123,8 @@ planora/
 │   └── bulk-schedule-import.md  批量添加日程：交给 Agent 写 planora.json 的规则 + 提示词
 │
 ├── data/
-│   └── planora.json           示例存档（14 条虚构计划）：格式即真实数据文件的格式
+│   ├── planora.json           示例存档（14 条虚构计划）：格式即真实数据文件的格式
+│   └── StickyNote.json        示例便利贴（2 张）：同上
 │
 ├── THIRD_PARTY_LICENSES/      WebView2 SDK 与 OFL 字体的许可原文
 │
@@ -127,8 +132,8 @@ planora/
 │   ├── build-portable.mjs     把整个应用打成单文件 Planora.html（内含迷你打包器）
 │   ├── verify-portable.mjs    单文件版自检：CDP 驱动真实 Chromium 跑 18 项（file:// 路径）
 │   ├── verify-file-store.mjs  文件存储自检：22 项，含「旧浏览器数据自动搬进 JSON 文件」
-│   ├── store-file.mjs         数据文件读写：原子替换 + .bak + 坏档隔离
-│   ├── make-release.mjs       组装发布目录与 zip
+│   ├── store-file.mjs         数据文件读写：原子替换 + .bak + 坏档隔离（含便利贴用的整文档存储 createDocStore）
+│   ├── make-release.mjs       组装发布目录与 zip（含许可与 docs/）
 │   ├── PlanoraServer.cs       Planora.exe 的源码（WinExe：自带 WebView2 窗口 + 本机数据服务，无控制台）
 │   ├── Planora.exe.manifest   应用清单：asInvoker（不要管理员权限）+ Win10/11 兼容 + DPI 感知
 │   ├── webview2/              WebView2 运行库（编译期引用 + 发布期随 exe 同目录分发）
@@ -142,13 +147,16 @@ planora/
 │   │   ├── datetime.js        日期/时间的字符串运算与中文格式化
 │   │   ├── plan.js            计划实体的校验、创建、打补丁、状态流转
 │   │   ├── recurrence.js      重复计划：某天是否出现、那天的状态是什么
-│   │   └── schedule.js        一天的视图模型：排序、筛选、统计、泳道、时间窗
+│   │   ├── schedule.js        一天的视图模型：排序、筛选、统计、泳道、时间窗
+│   │   └── note.js            便利贴：颜色归一/亮度配字、撕下、放回、废纸篓
 │   │
 │   ├── data/                  ── 持久化层
 │   │   ├── backend.js         选路：本机 HTTP 服务（文件）还是浏览器 localStorage
 │   │   ├── serverStore.js     /api/store 客户端：写合并、失败留影子副本、迁移决策
 │   │   ├── storage.js         Web Storage 形状的抽象：版本号、迁移表、坏档隔离、内存兜底
 │   │   ├── planStore.js       计划仓库：唯一的可变状态 + 订阅广播 + 写穿持久化
+│   │   ├── docStore.js        /api/doc/<name> 整文档客户端（写穿 + 去抖 + localStorage 兜底）
+│   │   ├── noteStore.js       便利贴仓库：把 sticky/waste 两份文档缝成一个门面
 │   │   └── archive.js         导出/导入 JSON 备份
 │   │
 │   ├── state/
@@ -164,6 +172,8 @@ planora/
 │           ├── timeline.js    日时间轴：小时刻度、泳道、当前时刻线
 │           ├── planList.js    计划卡片列表 + 两种空状态
 │           ├── colophon.js    页脚：导出/导入/快捷键说明/存档信息
+│           ├── sticky.js      便利贴面板：多行编辑 + 颜色 + 撕下 + 光标保持
+│           ├── wasteDialog.js 废纸篓弹窗（放回 / 删除 / 清空）
 │           └── planDialog.js  新增/编辑弹窗（原生 <dialog>）
 │
 ├── styles/
@@ -176,7 +186,7 @@ planora/
 │   ├── fonts/                 本地打包的字体（Big Shoulders Display + Outfit，含 OFL 授权）
 │   └── icon.ico               快捷方式用的图标（墨框 + 朱色色条 + 三道墨线）
 │
-└── tests/                     10 个测试文件，87 个用例（含本机数据服务的 HTTP 契约测试）
+└── tests/                     12 个测试文件，104 个用例（含本机数据服务与便利贴文档接口的 HTTP 契约测试）
 ```
 
 ---
@@ -233,7 +243,7 @@ planora/
 
 **为什么非要一个服务**：浏览器里的页面（`file://` 或普通网页）既不能读也不能写它旁边的文件 —— 没有文件写权限，还会被 CORS 挡住。要让「数据就存在程序目录里的一个 JSON 文件」成立，只能由程序自己起一个只监听回环地址的小服务。代价是多了一个 HTTP 服务，收益是数据变成了与浏览器无关、可以直接拷走的物理文件。
 
-**接口只有四个**：
+**接口**：主数据四个 + 便利贴两个文档接口。
 
 | 接口 | 作用 |
 | --- | --- |
@@ -241,6 +251,10 @@ planora/
 | `GET /api/store` | 取回全部键（`{ keys: { "planora/plans/v1": "…" } }`） |
 | `PUT /api/store` | 整份写回（请求体 `{ keys: {…} }`），落盘后才回 200 |
 | `POST /api/bye` | 可选的礼貌告别（现在客户端不用它） |
+| `GET /api/doc/<name>` | 读一份整文档（`{ doc: … }`）；`<name>` 只认白名单 |
+| `PUT /api/doc/<name>` | 整份写回一个 JSON 对象，落成 `data\<对应文件>` |
+
+文档白名单：`sticky → data\StickyNote.json`、`waste → data\Wastebasket.json`。白名单之外的名字一律 404，所以 `/api/doc/etc`、`/api/doc/passwd` 之类打不进来；文档接口和主数据一样**不经静态通道暴露**（`/data/StickyNote.json` 走 HTTP 是 404）。
 
 其余路径一律走白名单：`/`、`/index.html`、`/Planora.html`、`/icon.ico`、`/favicon.ico`，所以不存在目录穿越；`/data/*` 明确 404（存档不会通过 HTTP 泄露）；请求体上限 4 MB。
 
@@ -267,6 +281,44 @@ planora/
 窗口引擎的 profile / 缓存放在程序目录的 `.webview2\`（只读目录时退到 `%LOCALAPPDATA%\Planora\webview2`）。它只是浏览器内核的缓存，**不是计划数据**；计划数据始终且只在 `data\planora.json`。
 
 自动化测试想对着运行中的服务跑自检，直接启动 exe 后用 `node tools/verify-file-store.mjs http://localhost:5173/` 即可（它自己起一个无头 Chromium 连服务，不碰 Planora 的窗口）。
+
+---
+
+## 便利贴（1.1.3）
+
+统计区右侧那张便签，用来随手记点不成体系的东西（灵感、待办口信、临时号码）。它和计划表是**两套独立存储**：
+
+- 便利贴正文 → `data\StickyNote.json`
+- 废纸篓（撕下的历史） → `data\Wastebasket.json`
+
+**能力**：自由输入 + 换行 + 多行编辑（一个 `<textarea>`，最多 2000 字）；自定义颜色（6 个预设油墨 + 一个取色器，深色底自动配浅色字）；拟物「撕下」——点便签底部的「撕 下」，这张飞进废纸篓，**自动补一张新的空白贴**（沿用刚撕下的颜色），方便继续记；废纸篓里每张可「放回」或「彻底删除」，也能「清空」。多张时用便签上方的小标签来回切换。
+
+**数据流**：`ui/views/sticky.js`（视图）→ `data/noteStore.js`（把 sticky/waste 两份文档缝成一个门面，保证列表里至少有一张可写空白贴）→ `data/docStore.js`（内存一份 + 写穿到 `/api/doc/<name>`，400ms 去抖、页面隐藏时补发）→ 服务端 `createDocStore` / `SaveDocJson` 原子落盘。纯逻辑（撕下、放回、颜色归一、亮度配字）全在 `domain/note.js`，可单测。对面不是本机服务（直接双击 `Planora.html`）时，`docStore` 退回 `localStorage`，功能不丢。
+
+**为什么单独两个文件、而不是塞进 `planora.json`**：需求要的就是「便利贴与废纸篓各自独立落盘」。文档接口是通用的整份 JSON 读写，和主数据的 `{keys}` 协议互不干扰，`planora.json` 的结构因此一字未改。
+
+两份文档的形状（注意：**这里是普通 JSON 对象，没有主数据那层「值是被转义的字符串」的写法**）：
+
+```json
+{
+  "format": "planora-notes/v1",
+  "current": "note-mw1sample-1",
+  "notes": [
+    { "id": "note-mw1sample-1", "text": "随手记\n支持换行", "color": "#f2b134", "updatedAt": "2026-10-09T08:00:00.000Z" }
+  ]
+}
+```
+
+```json
+{
+  "format": "planora-waste/v1",
+  "items": [
+    { "id": "note-mw1sample-2", "text": "撕下的那张", "color": "#7fb3c8", "updatedAt": "2026-10-09T08:05:00.000Z", "tornAt": "2026-10-09T09:00:00.000Z" }
+  ]
+}
+```
+
+`current` 指向正在写的那张贴（找不到就退回第一张）；`notes` 至少保留一张可写的空白贴；`color` 只认 `#rgb` / `#rrggbb`，其余值一律回落默认色；`text` 上限 2000 字；废纸篓是追加到头部（最新一张在最前），最多留 200 张。
 
 ---
 
@@ -346,17 +398,18 @@ planora/
 
 ## 批量添加日程：把整份课表交给 Agent
 
-一份 30 节的课表要在界面上点 180 次。量大的时候别一条条加：**把日程原文和 `data\planora.json` 一起交给 Agent（Qoder / Claude / Cursor 之类都行），让它整理成规定字段后写回文件**。数据就是一个纯文本 JSON，程序不在乎这一条是谁写进去的，只在乎格式和字段过不过校验。
+一份 30 节的课表要在界面上点两百多次。量大的时候别一条条加：**把日程原文和 `data\planora.json` 一起交给 Agent（Qoder / Claude / Cursor 之类都行），让它整理成规定字段后写回文件**。数据就是一个纯文本 JSON，程序只在乎格式和字段过不过校验，不关心这一条是谁写进去的。
 
-完整的写法、字段规则表、可直接复制的提示词模板和自检脚本在 **[`docs/bulk-schedule-import.md`](docs/bulk-schedule-import.md)**。这里只留三条最容易踩的：
+完整的写法、字段规则表、可直接复制给 Agent 的提示词模板和自检脚本在 **[`docs/bulk-schedule-import.md`](docs/bulk-schedule-import.md)**。这里只留四条最容易踩的：
 
-1. **先退出 Planora 再改文件。** 页面启动时把整份数据读进内存，之后每次改动都是「把内存里的全部键整份写回」。程序还开着就改文件，你写的那份会在下一次点击时被内存里的旧副本覆盖掉。
+1. **先完全退出 Planora 再改文件。** 页面启动时把整份数据读进内存，之后每次改动都是「把内存里的全部键整份写回」。程序还开着就改文件，你写的那份会在下一次点击时被内存里的旧副本覆盖掉。
 2. **`keys["planora/plans/v1"]` 的值是字符串，不是对象。** 计划那段 JSON 在外层文件里是被转义过的（里面的引号写成 `\"`）。写成对象的话，读盘时「不是字符串的值」会被直接丢掉，表现为打开后所有计划都不见了 —— 这是 Agent 批量写入最常见的翻车点。
 3. **重复只有 `daily`，没有「每周几」。** 周一三五的课必须按每一个具体日期各写一条 `repeat: "none"`；只有真正天天要做的事才写成一条 `daily` 系列（`date` 起始日 + `repeatUntil` 结束日，某一天的完成情况放 `overrides`）。用 `daily` 糊过去，周末也会长出课来。
+4. **校验没过的那条会被静默丢弃**，不报错也不提示，下一次保存就把这条永久写没了。所以写完先拿 `normalizePlan()` 过一遍（文档里有现成的一小段脚本），别靠「打开看看好像是对的」。
 
-还有个必须知道的性质：**校验没过的那条会被静默丢弃**，不报错也不提示，下一次保存就把这条永久写没了。所以写完先拿 `normalizePlan()` 过一遍（文档里有现成的一小段脚本），别靠「打开看看好像是对的」。
+不想手改数据文件的话，还有更稳的一条路：让 Agent 产出页脚「导入备份」那种格式的文件（`{"app","version","exportedAt","plans":[…]}`，`plans` 是真正的 JSON 数组，没有转义坑），再在界面里导入 —— 按 `id` 合并、由程序自己校验、不会清空现有数据。两条路的取舍写在那份文档里。
 
-如果不想手改数据文件，还有更稳的一条路：让 Agent 产出页脚「导入备份」那种格式的文件（`{"app","version","exportedAt","plans":[…]}`，`plans` 是真正的 JSON 数组，没有转义坑），再在界面里导入 —— 按 `id` 合并、由程序自己校验、不会清空现有数据。两条路的取舍写在上面那份文档里。
+便利贴和废纸篓（`StickyNote.json` / `Wastebasket.json`）走的是另一套整文档接口，不在这份批量规则的范围内 —— 它们的结构由 `domain/note.js` 解释，手写风险也低得多。
 
 ---
 
@@ -410,7 +463,7 @@ planora/
 node --test
 ```
 
-87 个用例，覆盖：
+104 个用例，覆盖：
 
 | 文件 | 覆盖内容 |
 | --- | --- |
@@ -422,8 +475,10 @@ node --test
 | `planStore.test.js` | 写穿持久化、订阅广播、**重复计划的状态只写当天覆盖值**、逐天勾选互不影响 |
 | `viewState.test.js` | 日期不持久化（每天回到今天）、脏偏好被忽略、主题三态解析 |
 | `archive.test.js` | 导出/导入往返、坏条目跳过计数、裸数组兼容 |
+| `note.test.js` | 颜色归一（只认 `#rgb`/`#rrggbb`）、按底色亮度配油墨、多行与超长截断、撕下带 `tornAt`、放回去掉 `tornAt`、**撕最后一张会自动补空白贴**、重启后便签与废纸篓都在、没有本机服务时退回 localStorage |
 | `modules.test.js` | 动态 import `src` 下每个模块（顺带查错导入路径），并核对外壳区域 id |
 | `storeApi.test.js` | **真起一个服务进程**：ping、静态文件、PUT→落盘→GET、`.bak` 与临时文件清理、400/403/404/413、坏档隔离 |
+| `docApi.test.js` | **真起一个服务进程**：`/api/doc/sticky` 与 `/api/doc/waste` 各写各的文件、中文与换行原样往返、白名单之外的文档名 404、非法请求体被拒、`.bak` 与临时文件 |
 
 一个已知的缺口：`src/data/serverStore.js` 里没有单测。它的 HTTP 契约由 `storeApi.test.js` 从服务端侧覆盖，但纯函数 `decideBootstrap()`（启动时决定认服务端 / 认影子副本 / 认旧浏览器数据 / 开新档）本身没有对着它的用例 —— 这块的逻辑只有真机升级时才会被走到。补它只需要一个假 `request`，是这份代码里性价比最高的待补测试。
 
@@ -447,7 +502,8 @@ Chrome / Edge 105+、Firefox 121+、Safari 15.4+。移动端布局可用，但�
 - **云端同步**：`planStore` 要的还是「Web Storage 形状」的适配器。`serverStore.js` 已经示范了怎么把 `setItem` 接到 HTTP 上，换成远端接口即可，UI 一行都不用改。
 - **多设备同步**：现在的服务只监听本机，天然不做同步。真要跨设备，就在 `data/` 下再加一个后端：同一个 `planStore` 接口，写到远端（并且得自己解决冲突）。
 - **多语言**：文案集中在 `config.js` 和各视图的常量里，抽出来就是字典。
-- **界面内的批量录入**：现在几十上百条靠 Agent 写数据文件（见 `docs/bulk-schedule-import.md`）。最该补的下一步是在应用里做一个「粘贴课表文本 → 解析成条目 → 列表预览 → 确认写入」的入口：校验（`validatePlanInput`）、归一化（`normalizePlan`）和写入（`planStore.replaceAll`）都已经有了，缺的只是一个解析器 —— 而且它得先把「周一三五 8:30-10:10 线性代数」这类按周几的描述，配上起止周展开成一个个具体日期，因为 `repeat` 只有 `daily`、表达不了「每周几」。预览这一步不能省：校验不过的条目是静默丢弃的，「导入成功但少了 3 条」完全可能发生。
+- **界面内的批量录入**：现在几十上百条计划靠 Agent 写数据文件（见 `docs/bulk-schedule-import.md`）。最该补的下一步是在应用里做一个「粘贴课表文本 → 解析成条目 → 列表预览 → 确认写入」的入口：校验（`validatePlanInput`）、归一化（`normalizePlan`）和写入（`planStore.replaceAll`）都已经有了，缺的只是一个解析器 —— 而且它得先把「周一三五 8:30-10:10 线性代数」这类按周几的描述，配上起止周展开成一个个具体日期，因为 `repeat` 只有 `daily`、表达不了「每周几」。预览这一步不能省：校验不过的条目是静默丢弃的，「导入成功但少了 3 条」完全可能发生。
+- **把便签纳入备份**：`archive.js` 的导出/导入只走 `plans`，便利贴和废纸篓不在里面。要做就把 `serializeArchive` 换成 `{ plans, sticky, waste }` 三段，`parseArchive` 逐段过 `readNotes` / `readWaste` —— 注意这是数据格式变更，得带版本号并保留对旧备份的兼容。
 
 ---
 
@@ -460,6 +516,8 @@ Chrome / Edge 105+、Firefox 121+、Safari 15.4+。移动端布局可用，但�
 - 时间轴不能拖拽改时间，改时间走编辑弹窗。
 - 时间窗默认 06:00–22:00，有更早/更晚的计划时自动扩边（最晚到 24:00）。
 - 重叠的计划并排显示在两条泳道里，不做自动避让堆叠。
+- 页脚的「导出备份 / 导入备份」只管计划，**不含便利贴和废纸篓** —— 那两个文件得自己拷走（它们本来就是独立文件，直接复制 `data\StickyNote.json`、`data\Wastebasket.json` 即可）。
+- 一张便利贴最多 2000 字（`NOTE_MAX_CHARS`），超出的部分在归一化时被截掉；废纸篓最多留 200 张，更早的会被挤掉。
 
 ---
 

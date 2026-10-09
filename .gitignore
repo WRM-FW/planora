@@ -6,17 +6,22 @@ Thumbs.ini
 desktop.ini
 
 # 运行期产物（本机数据、窗口引擎缓存、构建输出）—— 不是源码，不进仓库
-data/planora.json.bak
-data/planora.json.corrupt-*
+data/*.bak
+data/*.corrupt-*
+data/*.tmp
 data/planora.log
 .webview2/
 build/
+
+# 便利贴的废纸篓是运行时才生成的（第一次撕下便签时），仓库不带样本
+data/Wastebasket.json
 
 # 发布包由 node tools/make-release.mjs 生成，默认落在工程旁的 releases/（本仓库之外），
 # 通过 GitHub Release 分发，不进 git。
 /releases/
 *.zip
 
-# 本地个人数据：仓库里只保留示例档 planora.json。把自己的课表换成私人数据时，
-# 不想提交就取消下面这行的注释。
+# 本地个人数据：仓库里只保留示例档（data/planora.json 的计划、data/StickyNote.json 的便签）。
+# 不想把自己真实的数据提交上去，就取消下面两行的注释。
 # data/planora.json
+# data/StickyNote.json

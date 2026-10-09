@@ -1,0 +1,18 @@
+{
+  "format": "planora-notes/v1",
+  "current": "note-mw1sample-1",
+  "notes": [
+    {
+      "id": "note-mw1sample-1",
+      "text": "随手记：\n便利贴支持换行，最多 2000 字。\n点下面的「撕 下」会把这张收进废纸篓，并自动补一张空白贴。",
+      "color": "#f2b134",
+      "updatedAt": "2026-10-09T08:00:00.000Z"
+    },
+    {
+      "id": "note-mw1sample-2",
+      "text": "第二张贴示例：换颜色、用上方小标签来回切。",
+      "color": "#7fb3c8",
+      "updatedAt": "2026-10-09T08:05:00.000Z"
+    }
+  ]
+}

@@ -5,7 +5,7 @@
 
 export const APP_NAME = "Planora";
 export const APP_NAME_LATIN = "PLANORA";
-export const APP_VERSION = "1.1.2";
+export const APP_VERSION = "1.1.3";
 
 /** localStorage 键。数据与视图偏好分开存，清视图不会丢数据。 */
 export const DATA_KEY = "planora/plans/v1";
@@ -18,6 +18,26 @@ export const SCHEMA_VERSION = 1;
 /** 本地数据服务：由 Planora.exe 或 server.mjs 提供，把程序目录里的 JSON 文件当成可写存储。 */
 export const PING_API = "/api/ping";
 export const STORE_API = "/api/store";
+
+/** 便利贴：整份文档接口，服务端分别落盘 data\StickyNote.json 与 data\Wastebasket.json。 */
+export const STICKY_DOC = "sticky";
+export const WASTE_DOC = "waste";
+export function docApi(name) { return "/api/doc/" + name; }
+/** 便利贴可选油墨（丝印调色板里的色）；最后一项「自定义」交给取色器。 */
+export const NOTE_COLORS = [
+  { id: "amber", label: "琥珀", value: "#F2B134" },
+  { id: "sky", label: "天青", value: "#7FB3C8" },
+  { id: "coral", label: "珊瑚", value: "#E8553D" },
+  { id: "paper", label: "纸白", value: "#FAF5E7" },
+  { id: "mint", label: "薄荷", value: "#A8C6A1" },
+  { id: "lilac", label: "淡紫", value: "#C7B8E0" }
+];
+export const NOTE_DEFAULT_COLOR = NOTE_COLORS[0].value;
+/** 深色底上要用浅色字，浅色底用深色字：按亮度挑油墨。 */
+export const NOTE_INK_LIGHT = "#F4EBD6";
+export const NOTE_INK_DARK = "#173247";
+/** 一张便利贴最多多少字，防手滑粘进整本书。 */
+export const NOTE_MAX_CHARS = 2000;
 /** 已经从旧版浏览器存储搬到数据文件的标记：避免用户删掉数据文件后又被旧数据「复活」。 */
 export const MIGRATED_KEY = "planora/migrated/v1";
 /** 保存失败时的浏览器暂存副本（只在异常时写入，正常情况不存在）。 */
