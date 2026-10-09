@@ -1,0 +1,14 @@
+# 换行策略：仓库里统一存 LF，检出时按平台处理。
+* text=auto
+
+# Windows 脚本必须 CRLF，否则 cmd.exe 解析会出问题。
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# 二进制：不许 git 动字节，也不要做 diff。
+*.woff2 binary
+*.ico binary
+*.dll binary
+*.png binary
+*.jpg binary
+*.zip binary
