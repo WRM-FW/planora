@@ -1,0 +1,18 @@
+/* Silkscreen-poster display faces, bundled locally (SIL Open Font License 1.1).
+   Source: Google Fonts. Subset: latin. See ./OFL.txt */
+
+@font-face {
+  font-family: 'Big Shoulders Display';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./big-shoulders-display-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url('./outfit-latin.woff2') format('woff2');
+}

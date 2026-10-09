@@ -1,0 +1,17 @@
+{
+  "name": "planora",
+  "version": "1.1.2",
+  "private": true,
+  "type": "module",
+  "description": "Planora · 轻量级个人每日计划表（零依赖原生 ES Modules，数据存程序目录的 JSON 文件）",
+  "scripts": {
+    "start": "node server.mjs",
+    "launch": "node launch.mjs",
+    "dev": "node server.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

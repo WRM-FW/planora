@@ -1,0 +1,110 @@
+/*
+ * 设计令牌 —— 丝印调色板。
+ * 一次「上墨」= 一个主题：day 是正午的港口蓝 + 纸色，night 是黄昏换色再印。
+ * 几何完全一致，只有油墨不同（对应 STYLE.md 的 palette re-ink）。
+ *
+ * 用到的油墨（每套 ≤6 色 + 纸张本色）：
+ *   paper  纸张本色，最亮的元素，从不"上墨"的区域
+ *   rule   远处的淡油墨：辅线、刻度
+ *   sky    天空/中景：进行中
+ *   deep   深色墨：低优先级
+ *   near   最深墨：正文与信息带
+ *   accent 唯一的高亮墨：高优先级与「此刻」
+ *   amber  次高亮墨：中优先级
+ */
+:root {
+  --font-display: "Big Shoulders Display", "Oswald", "Haettenschweiler", "Arial Narrow", "Microsoft YaHei UI", sans-serif;
+  --font-sans: "Outfit", "Segoe UI", "PingFang SC", "Microsoft YaHei UI", "Hiragino Sans GB", system-ui, sans-serif;
+
+  --reg: 3px;        /* 套印偏移：硬阴影的位移量 */
+  --line: 2px;       /* 油墨描边宽度 */
+  --gap: 16px;
+  --shell: 1320px;
+  --grain-img: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'180'%20height%3D'180'%3E%3Cfilter%20id%3D'g'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'0.85'%20numOctaves%3D'4'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20type%3D'saturate'%20values%3D'0'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'180'%20height%3D'180'%20filter%3D'url(%23g)'%20opacity%3D'0.62'%2F%3E%3C%2Fsvg%3E");
+}
+
+:root[data-theme="day"] {
+  color-scheme: light;
+
+  --sheet: #F2E8D2;
+  --sheet-hi: #FAF5E7;
+  --sheet-lo: #E7DABD;
+
+  --ink-rule: #C6B99B;
+  --ink-sky: #7FB3C8;
+  --ink-deep: #2F6E8E;
+  --ink-text: #173247;
+  --ink-dim: #5D6B78;
+  --ink-accent: #E8553D;
+  --ink-amber: #F2B134;
+
+  --ink-band: #173247;
+  --ink-onband: #F4EBD6;
+  --band-edge: rgba(244, 235, 214, 0.32);
+
+  --card-bg: #FAF5E7;
+  --card-shadow: #C6B99B;
+  --backdrop: rgba(15, 15, 29, 0.55);
+  --grain-blend: multiply;
+  --grain-opacity: 0.42;
+  --steps-img: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'112'%20height%3D'8'%3E%3Crect%20x%3D'0'%20width%3D'28'%20height%3D'8'%20fill%3D'%23E8553D'%2F%3E%3Crect%20x%3D'28'%20width%3D'28'%20height%3D'8'%20fill%3D'%23F2B134'%2F%3E%3Crect%20x%3D'56'%20width%3D'28'%20height%3D'8'%20fill%3D'%232F6E8E'%2F%3E%3Crect%20x%3D'84'%20width%3D'28'%20height%3D'8'%20fill%3D'%237FB3C8'%2F%3E%3C%2Fsvg%3E");
+
+  --pr-high: #E8553D;
+  --pr-mid: #F2B134;
+  --pr-low: #2F6E8E;
+  --pr-high-on: #FDF1E7;
+  --pr-mid-on: #173247;
+  --pr-low-on: #F2E8D2;
+
+  --st-todo: #8C8676;
+  --st-doing: #7FB3C8;
+  --st-done: #173247;
+  --st-doing-on: #173247;
+  --st-done-on: #F2E8D2;
+}
+
+:root[data-theme="night"] {
+  color-scheme: dark;
+
+  /* 黄昏换色：同一个版，另一套油墨 */
+  --sheet: #1B1B2F;
+  --sheet-hi: #24243B;
+  --sheet-lo: #141420;
+
+  --ink-rule: #43325A;
+  --ink-sky: #7C3E5F;
+  --ink-deep: #D8613F;
+  --ink-text: #F2E8D2;
+  --ink-dim: #B4A9BE;
+  --ink-accent: #FBE3A6;
+  --ink-amber: #F4B461;
+
+  --ink-band: #0E0E1A;
+  --ink-onband: #F6EEDC;
+  --band-edge: rgba(246, 238, 220, 0.28);
+
+  --card-bg: #24243B;
+  --card-shadow: #43325A;
+  --backdrop: rgba(6, 6, 12, 0.72);
+  --grain-blend: screen;
+  --grain-opacity: 0.22;
+  --steps-img: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'112'%20height%3D'8'%3E%3Crect%20x%3D'0'%20width%3D'28'%20height%3D'8'%20fill%3D'%23FBE3A6'%2F%3E%3Crect%20x%3D'28'%20width%3D'28'%20height%3D'8'%20fill%3D'%23F4B461'%2F%3E%3Crect%20x%3D'56'%20width%3D'28'%20height%3D'8'%20fill%3D'%23D8613F'%2F%3E%3Crect%20x%3D'84'%20width%3D'28'%20height%3D'8'%20fill%3D'%237C3E5F'%2F%3E%3C%2Fsvg%3E");
+
+  --pr-high: #FF6B4A;
+  --pr-mid: #F4B461;
+  --pr-low: #86BCD0;
+  --pr-high-on: #1B1B2F;
+  --pr-mid-on: #1B1B2F;
+  --pr-low-on: #1B1B2F;
+
+  --st-todo: #9C93A8;
+  --st-doing: #86BCD0;
+  --st-done: #F2E8D2;
+  --st-doing-on: #1B1B2F;
+  --st-done-on: #1B1B2F;
+}
+
+/* 优先级 -> 油墨 + 印在它上面的字色，全站统一从这两个变量取 */
+.pr-high { --pr-ink: var(--pr-high); --pr-on: var(--pr-high-on); }
+.pr-medium { --pr-ink: var(--pr-mid); --pr-on: var(--pr-mid-on); }
+.pr-low { --pr-ink: var(--pr-low); --pr-on: var(--pr-low-on); }

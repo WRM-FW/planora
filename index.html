@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="day">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planora · 每日计划</title>
+<meta name="description" content="Planora：轻量级个人每日计划表，按日期管理学习、工作与生活任务。">
+<meta name="application-name" content="Planora">
+<meta name="version" content="1.0.0">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23F2E8D2'/%3E%3Ccircle cx='16' cy='13' r='7' fill='%23E8553D'/%3E%3Crect y='23' width='32' height='9' fill='%23173247'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./assets/fonts/fonts.css">
+<link rel="stylesheet" href="./styles/tokens.css">
+<link rel="stylesheet" href="./styles/base.css">
+<link rel="stylesheet" href="./styles/layout.css">
+<link rel="stylesheet" href="./styles/components.css">
+<script>
+/* 首帧前定调：先读主题偏好，避免日/夜调色板闪一下。
+   键名与 src/config.js 的 VIEW_KEY 保持一致（此处不能 import 模块）。 */
+(function () {
+  var theme = "auto";
+  try {
+    var raw = localStorage.getItem("planora/view/v1") || localStorage.getItem("daily-planner/view/v1");
+    if (raw) theme = JSON.parse(raw).theme || "auto";
+  } catch (e) { /* 存储不可用则回落到系统偏好 */ }
+  var dark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.dataset.theme = (theme === "night" || (theme === "auto" && dark)) ? "night" : "day";
+  document.documentElement.dataset.themePreference = theme;
+})();
+</script>
+</head>
+<body>
+<a class="skip-link" href="#ledger">跳到计划列表</a>
+<div class="grain" aria-hidden="true"></div>
+<div class="shell">
+  <header class="masthead">
+    <div class="masthead__brand">
+      <h1 class="masthead__title">Planora</h1>
+      <p class="masthead__sub">PLANORA · 一色一印</p>
+    </div>
+    <div class="masthead__tools" id="tools"></div>
+  </header>
+  <section class="band" id="band" aria-label="日期导航与筛选"></section>
+  <section class="summary" id="summary" aria-label="当天统计"></section>
+  <main class="workspace">
+    <section class="rail" id="rail" aria-label="每日时间安排"></section>
+    <section class="ledger" id="ledger" aria-label="计划列表" tabindex="-1"></section>
+  </main>
+  <footer class="colophon" id="colophon"></footer>
+</div>
+<noscript>
+  <p class="noscript">这个计划表需要 JavaScript 才能读写本地数据。</p>
+</noscript>
+<div id="dialog-root"></div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>

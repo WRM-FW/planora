@@ -1,0 +1,121 @@
+/* 版面：报头 → 信息带 → 统计 → 工作区（时间轴 + 清单）→ 版权条 */
+.shell {
+  position: relative;
+  z-index: 1;
+  max-width: var(--shell);
+  margin: 0 auto;
+  padding: 26px 28px 44px;
+}
+
+/* 报头：标题印在"天空"里，字距拉开 */
+.masthead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding-bottom: 14px;
+  border-bottom: var(--line) solid var(--ink-text);
+}
+.masthead__title {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4.4vw, 54px);
+  font-weight: 800;
+  line-height: 0.94;
+  letter-spacing: 0.02em;
+}
+.masthead__sub {
+  margin-top: 7px;
+  font-size: 11px;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+.masthead__tools { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* 信息带：深墨色横条，顶上一道阶梯色带 */
+.band {
+  position: relative;
+  margin-top: 20px;
+  padding: 0 18px;
+  background: var(--ink-band);
+  color: var(--ink-onband);
+  box-shadow: var(--reg) var(--reg) 0 var(--ink-rule);
+}
+.band::before {
+  content: "";
+  display: block;
+  height: 8px;
+  margin: 0 -18px 14px;
+  background-image: var(--steps-img);
+  background-repeat: repeat-x;
+}
+.band__rows { padding-bottom: 2px; }
+.band__row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.band__row--main { justify-content: space-between; padding-bottom: 14px; }
+.band__row--strip {
+  gap: 10px;
+  padding: 12px 0 14px;
+  border-top: var(--line) solid var(--band-edge);
+}
+
+/* 统计条 */
+.summary { margin-top: 20px; }
+.summary__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 150px)) minmax(0, 1fr);
+  border: var(--line) solid var(--ink-text);
+  background: var(--sheet-hi);
+  box-shadow: var(--reg) var(--reg) 0 var(--ink-rule);
+}
+.summary__note {
+  margin: 10px 2px 0;
+  font-size: 13px;
+  color: var(--ink-dim);
+}
+
+/* 工作区：左边时间安排，右边计划清单 */
+.workspace {
+  display: grid;
+  grid-template-columns: 352px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+  margin-top: 22px;
+}
+
+.colophon {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 22px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: var(--line) solid var(--ink-text);
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+.colophon__col { display: flex; flex-direction: column; gap: 4px; }
+.colophon__col--actions { flex-direction: row; align-items: center; gap: 10px; flex-wrap: wrap; }
+.colophon__mark {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.22em;
+  color: var(--ink-text);
+}
+.colophon__note { max-width: 440px; line-height: 1.65; }
+.colophon__keys { letter-spacing: 0.06em; }
+.colophon__meta { letter-spacing: 0.06em; }
+
+@media (max-width: 1080px) {
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  .panel--rail { position: static; }
+  .tl__scroll { max-height: none; }
+}
+
+@media (max-width: 720px) {
+  .shell { padding: 18px 16px 32px; }
+  .summary__grid { grid-template-columns: minmax(0, 1fr); }
+  .stat { border-right: 0; border-bottom: var(--line) solid var(--ink-rule); }
+  .stat:last-child { border-bottom: 0; }
+}
