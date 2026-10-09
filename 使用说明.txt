@@ -2,7 +2,7 @@ Planora 1.1.2 · 每日计划 · 独立桌面版（绿色免安装）
 =====================================================
 
 一、怎么启动
-  1. 把整个 Planora-1.1.2 文件夹解压到任意普通目录（桌面、D:\Planora 都行；不建议放
+  1. 把整个 planora_1.1.2 文件夹解压到任意普通目录（桌面、D:\Planora 都行；不建议放
      C:\Program Files，也不要放在开发工程目录里）。
   2. 双击 Planora.exe。
   3. Planora 会打开「自己的窗口」（标题栏写着 Planora · 每日计划），看到时间轴就能用了。
@@ -11,7 +11,7 @@ Planora 1.1.2 · 每日计划 · 独立桌面版（绿色免安装）
 
 二、我的数据存在哪
   就在程序目录里：
-      Planora-1.1.2\data\planora.json
+      planora_1.1.2\data\planora.json
   这是纯文本，用记事本就能打开看。加、改、删计划都会立刻写回这个文件；
   关掉窗口再打开（甚至把这个文件夹整个拷到另一台电脑）都还是最新的数据。
 
@@ -88,6 +88,8 @@ Planora 1.1.2 · 每日计划 · 独立桌面版（绿色免安装）
   Microsoft.Web.WebView2.Core.dll      窗口渲染引擎（WebView2）运行库，勿删
   Microsoft.Web.WebView2.WinForms.dll  窗口渲染引擎（WebView2）运行库，勿删
   WebView2Loader.dll                   窗口渲染引擎（WebView2）加载器，勿删
-  data\                                第一次运行后出现：planora.json 是数据，planora.log 是日志
+  data\                                运行后出现：planora.json 是数据（第一次改动时写出），planora.log 是日志
+  docs\                                给 AI Agent 看的规则（第八节讲的批量添加日程）
   README.md                            设计与实现说明
+  LICENSE / NOTICE.md / THIRD_PARTY_LICENSES\   许可，以及 Microsoft WebView2 SDK 与两款字体的第三方许可原文
   使用说明.txt                         本文件

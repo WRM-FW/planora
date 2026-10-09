@@ -106,12 +106,18 @@ const items = [
   [htmlPath, "Planora.html"],
   [iconPath, "icon.ico"],
   [join(project, "使用说明.txt"), "使用说明.txt"],
-  [join(project, "README.md"), "README.md"]
+  [join(project, "README.md"), "README.md"],
+  // 分发包里必须带上许可：WebView2 SDK 那份许可要求再分发时保留版权声明与免责声明，
+  // 字体是 OFL（同样要随包带授权文本）；docs/ 是 使用说明.txt 第八节点开的批量导入规则。
+  [join(project, "LICENSE"), "LICENSE"],
+  [join(project, "NOTICE.md"), "NOTICE.md"],
+  [join(project, "THIRD_PARTY_LICENSES"), "THIRD_PARTY_LICENSES"],
+  [join(project, "docs"), "docs"]
 ];
 for (const dll of wv2Ship) items.push([join(wv2Dir, dll), dll]);
 for (const pair of items) {
   if (!existsSync(pair[0])) throw new Error("缺少发布文件：" + pair[0]);
-  cpSync(pair[0], join(stage, pair[1]));
+  cpSync(pair[0], join(stage, pair[1]), { recursive: true });
 }
 console.log("  3/5  发布目录      " + stage);
 

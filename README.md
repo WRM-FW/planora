@@ -14,10 +14,10 @@
 
 ### 绿色版：解压就能用
 
-发布包解压后是一个 `Planora-1.1.2` 文件夹：
+发布包解压后是一个 `planora_1.1.2` 文件夹（`make-release.mjs` 的命名规则是 `planora_<版本>`；文件夹叫什么无所谓，程序只认自己所在的目录）：
 
 ```
-Planora-1.1.2/
+planora_1.1.2/
 ├── Planora.exe                          启动入口（双击它）：自带窗口 + 本机数据服务
 ├── Planora.html                         应用本体：单文件，样式 / 字体 / 脚本全部内联
 ├── icon.ico                             程序图标（已内嵌进 exe）
@@ -26,12 +26,16 @@ Planora-1.1.2/
 ├── WebView2Loader.dll                   窗口渲染引擎（WebView2）加载器
 ├── 使用说明.txt
 ├── README.md
-└── data/                第一次运行后自动出现，计划就存在这里
+├── LICENSE                              MIT
+├── NOTICE.md                            第三方组件与许可
+├── THIRD_PARTY_LICENSES/                WebView2 SDK 与字体的许可原文
+├── docs/                                给 Agent 看的：批量添加日程的规则 + 提示词模板
+└── data/                第一次改动后自动出现，计划就存在这里
     ├── planora.json     ← 你的全部计划（纯文本，能直接打开看、直接拷走）
     └── planora.log      运行日志，出问题时的排查线索
 ```
 
-双击 **Planora.exe** → Planora 打开**自己的窗口**（标题栏「Planora · 每日计划」），完事。第一次启动会自动建好 `data\planora.json`，之后**加、改、删都会立刻写回这个文件**，关掉再打开还是最新的数据。再双击一次不会开第二个窗口，只会把已有窗口叫到前台。
+双击 **Planora.exe** → Planora 打开**自己的窗口**（标题栏「Planora · 每日计划」），完事。第一次启动会建好 `data\` 目录和运行日志 `planora.log`，`planora.json` 则在你第一次改动（加一条计划、改个状态、甚至切一下主题）时写出来 —— 之后**任何改动都会立刻写回这个文件**，关掉再打开还是最新的数据。再双击一次不会开第二个窗口，只会把已有窗口叫到前台。
 
 **为什么没有黑窗、也不借浏览器**：`Planora.exe` 编译成 `winexe` 子系统（`/target:winexe`），Windows **根本不会给它分配控制台**，所以从启动到退出全程没有 CMD / PowerShell 窗口。它自己就是一个极小的本机 HTTP 服务：只监听 `127.0.0.1`（不对外、不联网、不装服务、不写注册表），并通过 `/api/store` 读写 `data\planora.json`；界面不再交给系统浏览器，而是由进程内一个 WinForms 窗口里的 **WebView2** 控件加载这个本机服务来渲染 —— 所以 Planora 有属于自己的窗口、自己的图标和任务栏按钮。**关掉这个窗口，服务和窗口引擎的子进程一起退出，不留常驻后台进程。**
 
@@ -61,7 +65,7 @@ node --test                                               # 87 个用例，秒�
 node tools/build-portable.mjs <输出路径>                   # 打单文件 Planora.html
 node tools/verify-portable.mjs <Planora.html>             # 真实浏览器自检单文件版（18 项，file:// 兜底路径）
 node tools/verify-file-store.mjs http://localhost:5173/   # 真实浏览器自检文件存储（22 项，需先启动 exe）
-node tools/make-release.mjs                               # 组装 releases/Planora/Planora-<版本> + zip
+node tools/make-release.mjs                               # 单文件 HTML + csc 编译 exe + 组装 <输出根>/planora_<版本> 与 zip（默认根目录是工程旁的 releases/）
 ```
 
 编译 `Planora.exe` 只需要 .NET Framework 4.x 自带的 `csc`（Windows 自带，无需安装任何 SDK）。1.1.2 起界面由 WebView2 承载，所以还要引用随带的 WebView2 运行库（`tools/webview2/`，发布时一并拷贝到 exe 同目录）：
