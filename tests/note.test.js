@@ -111,18 +111,73 @@ test("tear 把当前贴送进废纸篓并自动补一张新空白贴", async fun
   assert.equal(s.current.text, "");   // 新贴是空白的
 });
 
-test("restore 从废纸篓放回，purge 与 emptyWaste 彻底删除", async function () {
+test("撕下有内容的贴才进废纸篓；撕空白贴直接丢弃不占篓", async function () {
+  const req = fakeRequest();
+  const store = createNoteStore({ request: req, storage: createMemoryStorage(), now: now });
+  await store.load();
+  const blankId = store.get().currentId;
+  store.tear(blankId);                       // 空白 → 丢弃
+  assert.equal(store.get().wasteCount, 0);   // 不进废纸篓
+  assert.equal(store.get().notes.length, 1); // 仍保留一张可写的空白贴
+
+  const cur = store.get().currentId;
+  store.setText(cur, "有内容");
+  store.tear(cur);                           // 有内容 → 进篓
+  assert.equal(store.get().wasteCount, 1);
+  assert.equal(store.get().waste[0].text, "有内容");
+});
+
+test("多张时撕掉一张只减一张，不再补空白贴（标签不会赖着不走）", async function () {
+  const req = fakeRequest();
+  const store = createNoteStore({ request: req, storage: createMemoryStorage(), now: now });
+  await store.load();
+  store.setText(store.get().currentId, "第一张");
+  store.addBlank();
+  assert.equal(store.get().notes.length, 2);
+  const second = store.get().currentId;
+  store.tear(second);                        // 撕第二张
+  assert.equal(store.get().notes.length, 1); // 只剩第一张，没有多补一张空白
+  assert.equal(store.get().current.text, "第一张");
+});
+
+test("restore 放回：当前是空白贴则占位复用，不增殖", async function () {
   const req = fakeRequest();
   const store = createNoteStore({ request: req, storage: createMemoryStorage(), now: now });
   await store.load();
   const first = store.get().currentId;
-  store.tear(first);
+  store.setText(first, "要被撕掉");
+  store.tear(first);                         // 进篓，当前变一张空白贴
+  assert.equal(store.get().notes.length, 1);
+  assert.ok(store.get().current.text === "");
   const gone = store.get().waste[0].id;
   assert.equal(store.restore(gone), true);
-  assert.equal(store.get().wasteCount, 0);
-  // 再撕一张，purge 掉
-  const cur = store.get().currentId;
-  store.tear(cur);
+  const s = store.get();
+  assert.equal(s.notes.length, 1);           // 复用空白贴，没有变成 2 张
+  assert.equal(s.wasteCount, 0);
+  assert.equal(s.current.text, "要被撕掉");
+});
+
+test("restore 放回：当前贴有内容则作为新贴追加", async function () {
+  const req = fakeRequest();
+  const store = createNoteStore({ request: req, storage: createMemoryStorage(), now: now });
+  await store.load();
+  const a = store.get().currentId;
+  store.setText(a, "留着的贴");
+  const b = store.addBlank();
+  store.setText(b.id, "将被撕");
+  store.tear(b.id);                          // b 有内容 → 进篓；当前切到 a（有内容）
+  assert.equal(store.get().current.text, "留着的贴");
+  store.restore(store.get().waste[0].id);    // 当前非空 → 追加
+  assert.equal(store.get().notes.length, 2);
+});
+
+test("purge 与 emptyWaste 彻底删除", async function () {
+  const req = fakeRequest();
+  const store = createNoteStore({ request: req, storage: createMemoryStorage(), now: now });
+  await store.load();
+  const first = store.get().currentId;
+  store.setText(first, "x");
+  store.tear(first);
   assert.equal(store.purge(store.get().waste[0].id), true);
   assert.equal(store.get().wasteCount, 0);
 });
@@ -133,8 +188,9 @@ test("重启后（同一份文档）便利贴与废纸篓都还在", async funct
   await a.load();
   const id = a.get().currentId;
   a.setText(id, "留存测试");
-  a.tear(id);
-  a.addBlank();
+  a.tear(id);                                // 进篓，留一张空白贴
+  const kept = a.addBlank();
+  a.setText(kept.id, "另一张");              // 让它非空，避免被空贴归一化收掉
   a.flush();
 
   const b = createNoteStore({ request: req, storage: createMemoryStorage(), now: now });
@@ -142,7 +198,27 @@ test("重启后（同一份文档）便利贴与废纸篓都还在", async funct
   const s = b.get();
   assert.equal(s.wasteCount, 1);
   assert.equal(s.waste[0].text, "留存测试");
-  assert.equal(s.notes.length, 2);   // 撕下补的空白贴 + 手动新建的一张
+  assert.equal(s.notes.length, 2);           // 撕下补的空白贴 + 有内容的一张
+});
+
+test("加载时把历史 bug 攒下的一堆空白贴收敛成一张", async function () {
+  const req = fakeRequest();
+  req.docs.sticky = {
+    format: "planora-notes/v1", current: "b1",
+    notes: [
+      { id: "b1", text: "", color: "#f2b134", updatedAt: "2026-10-09T00:00:00.000Z" },
+      { id: "c1", text: "有内容", color: "#7fb3c8", updatedAt: "2026-10-09T00:00:00.000Z" },
+      { id: "b2", text: "   ", color: "#e8553d", updatedAt: "2026-10-09T00:00:00.000Z" },
+      { id: "b3", text: "", color: "#a8c6a1", updatedAt: "2026-10-09T00:00:00.000Z" }
+    ]
+  };
+  const store = createNoteStore({ request: req, storage: createMemoryStorage(), now: now });
+  await store.load();
+  const s = store.get();
+  const blanks = s.notes.filter(function (n) { return !n.text.trim(); });
+  assert.equal(s.notes.length, 2);           // 一张空白 + 一张有内容
+  assert.equal(blanks.length, 1);
+  assert.equal(s.currentId, "b1");           // 保留的是当前那张空白
 });
 
 test("没有本地服务时退回 localStorage 兜底，功能不丢", async function () {

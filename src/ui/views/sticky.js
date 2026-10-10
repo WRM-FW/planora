@@ -50,11 +50,19 @@ function noteTabs(snapshot) {
   const tabs = snapshot.notes.map(function (n) {
     const on = n.id === snapshot.currentId;
     const preview = (n.text || "").trim().split("\n")[0] || "空白";
-    return el("button", {
+    return el("span", {
       class: "note-tab" + (on ? " is-active" : ""),
-      attrs: { type: "button", "data-action": "select-note", "data-id": n.id, title: preview },
       style: "background:" + n.color + ";color:" + inkFor(n.color)
-    }, [preview.slice(0, 6)]);
+    }, [
+      el("button", {
+        class: "note-tab__pick",
+        attrs: { type: "button", "data-action": "select-note", "data-id": n.id, title: "查看：" + preview }
+      }, [preview.slice(0, 6)]),
+      el("button", {
+        class: "note-tab__close",
+        attrs: { type: "button", "data-action": "close-note", "data-id": n.id, "aria-label": "关闭这张便利贴", title: "关闭（有内容则进废纸篓）" }
+      }, ["×"])
+    ]);
   });
   return el("div", { class: "note-tabs", attrs: { role: "tablist", "aria-label": "便利贴列表" } }, tabs);
 }

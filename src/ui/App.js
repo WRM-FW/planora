@@ -241,6 +241,7 @@ export function createApp(options) {
     },
     "export-data": function () { exportArchive(); },
     "tear-note": function (node) { tearCurrentNote(node.dataset.id); },
+    "close-note": function (node) { if (noteStore) noteStore.tear(node.dataset.id); },
     "select-note": function (node) { if (noteStore) noteStore.select(node.dataset.id); },
     "add-note": function () { if (noteStore) noteStore.addBlank(); },
     "set-note-color": function (node) {

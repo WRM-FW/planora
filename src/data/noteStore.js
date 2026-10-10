@@ -63,17 +63,35 @@ export function createNoteStore(options) {
     return false;
   }
 
-  /** 启动：拉两份文档 → 归一化 → 兜底一张空白贴。 */
+  const isBlank = function (n) { return !(n && typeof n.text === "string" && n.text.trim()); };
+
+  /** 归一化：非空贴全留，空贴最多留一张（优先当前那张）—— 修掉历史 bug 攒下的一堆空白标签。 */
+  function normalizeNotes(list, preferId) {
+    const out = [];
+    let keptBlank = false;
+    const firstBlank = list.filter(isBlank).some(function (n) { return n.id === preferId; }) ? preferId : null;
+    list.forEach(function (n) {
+      if (!isBlank(n)) { out.push(n); return; }
+      const wantKeep = firstBlank ? n.id === firstBlank : !keptBlank;
+      if (wantKeep && !keptBlank) { out.push(n); keptBlank = true; }
+    });
+    if (!out.length) out.push(createNote({ color: NOTE_DEFAULT_COLOR }, deps));
+    return out;
+  }
+
+  /** 启动：拉两份文档 → 归一化（含空贴去重）→ 兜底一张空白贴。 */
   function load() {
     return Promise.all([stickyDoc.load(), wasteDoc.load()]).then(function () {
-      notes = readNotes(stickyDoc.get());
-      waste = readWaste(wasteDoc.get());
+      const rawNotes = readNotes(stickyDoc.get());
       const sdoc = stickyDoc.get();
-      currentId = sdoc && typeof sdoc.current === "string" ? sdoc.current : null;
-      const added = ensureCurrent();
-      // 首次没有文档、或补了空白贴：落一次盘，让 data\ 下真的出现文件。
+      const rawCurrent = sdoc && typeof sdoc.current === "string" ? sdoc.current : null;
+      waste = readWaste(wasteDoc.get());
+      notes = normalizeNotes(rawNotes, rawCurrent);
+      currentId = notes.some(function (n) { return n.id === rawCurrent; }) ? rawCurrent : notes[0].id;
+      ensureCurrent();
+      // 归一化可能改动了列表：落一次盘，让 data\ 下与内存一致。
       persistSticky();
-      if (added) emit();
+      emit();
       return api.get();
     });
   }
@@ -115,18 +133,25 @@ export function createNoteStore(options) {
       return fresh;
     },
     /**
-     * 撕下：当前贴进废纸篓，自动补一张新的空白贴继续写。
+     * 撕下 / 关闭一张便利贴：把它从列表移除，让「本体 / 标签 / 废纸篓」三者保持一致。
+     * · 有内容的贴 → 进废纸篓（可放回）；空白贴 → 直接丢弃，不占废纸篓。
+     * · 撕完若还有别的贴，就切到相邻那张（不再补空白贴）；若撕的是最后一张，才补一张空白贴继续写。
      * 返回被撕下的那张，供视图放「飞进纸篓」的动画。
      */
     tear: function (id) {
       const target = id || currentId;
+      const idx = notes.findIndex(function (n) { return n.id === target; });
+      if (idx < 0) return null;
       const res = tearOff(notes, target, deps);
-      if (!res.torn) return null;
-      waste = addToWaste(waste, res.torn);
       notes = res.notes;
-      const fresh = createNote({ color: res.torn.color }, deps);   // 新贴沿用刚撕下的颜色，顺手
-      notes = notes.concat([fresh]);
-      currentId = fresh.id;
+      if (!isBlank(res.torn)) waste = addToWaste(waste, res.torn);
+      if (!notes.length) {
+        const fresh = createNote({ color: res.torn.color }, deps);
+        notes = [fresh];
+        currentId = fresh.id;
+      } else {
+        currentId = notes[Math.min(idx, notes.length - 1)].id;
+      }
       persistWaste();
       persistSticky();
       emit();
@@ -136,7 +161,15 @@ export function createNoteStore(options) {
       const res = restoreFrom(waste, id);
       if (!res.restored) return false;
       waste = res.waste;
-      notes = notes.concat([res.restored]);
+      const cur = currentNote();
+      if (cur && isBlank(cur)) {
+        // 当前是空白贴：用放回的那张贴占掉它，避免多出一张空贴（增殖）
+        const i = notes.findIndex(function (n) { return n.id === cur.id; });
+        notes = notes.slice();
+        notes[i] = res.restored;
+      } else {
+        notes = notes.concat([res.restored]);
+      }
       currentId = res.restored.id;
       persistWaste();
       persistSticky();

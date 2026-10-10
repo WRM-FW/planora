@@ -425,14 +425,24 @@
 .sticky-panel__hint { font-size: 11px; line-height: 1.5; color: var(--ink-dim); }
 .sticky-panel.is-empty { min-height: 120px; align-items: center; justify-content: center; }
 
-/* 多张便利贴的切换标签 */
+/* 多张便利贴的切换标签：每张一个「查看」+ 一个「关闭」 */
 .note-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .note-tab {
-  max-width: 64px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  padding: 3px 8px; font-size: 11px;
-  border: var(--line) solid var(--ink-rule); cursor: pointer; opacity: 0.7;
+  display: inline-flex; align-items: stretch; max-width: 92px;
+  font-size: 11px; opacity: 0.72;
+  border: var(--line) solid var(--ink-rule);
 }
 .note-tab.is-active { opacity: 1; border-color: var(--ink-text); box-shadow: 2px 2px 0 var(--ink-rule); }
+.note-tab__pick {
+  border: 0; background: transparent; color: inherit; cursor: pointer;
+  padding: 3px 4px 3px 8px; font: inherit;
+  max-width: 68px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.note-tab__close {
+  border: 0; background: transparent; color: inherit; cursor: pointer;
+  padding: 3px 6px; font: inherit; line-height: 1; opacity: 0.7;
+}
+.note-tab__close:hover { opacity: 1; }
 
 /* 便签本体：微微旋转 + 硬阴影 + 顶部胶带，拟物成"贴在板上的一张纸"；高度撑满便利贴列 */
 .note {
